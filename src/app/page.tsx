@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import io from "socket.io-client";
 
 const socket = io("https://humalahuutelu-api.onrender.com");
@@ -56,6 +56,8 @@ const ChatComponent = () => {
   const [currentMessage, setCurrentMessage] = useState("");
   const [latestMessage, setLatestMessage] = useState<string>("");
 
+  const scrollRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     socket.on("message", (msg: string) => {
       const moderatedMsg = moderateMessage(msg);
@@ -72,6 +74,10 @@ const ChatComponent = () => {
     };
   }, [latestMessage]);
 
+  useEffect(() => {
+    scrollRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
   const handleSendMessage = () => {
     if (currentMessage.trim()) {
       const moderatedMessage = moderateMessage(currentMessage);
@@ -82,44 +88,39 @@ const ChatComponent = () => {
   };
 
   return (
-    <div className="p-12 max-w-[600px]">
-      <h4>Chat</h4>
+    <div className="w-full p-4 max-w-md mx-auto items-center justify-center flex flex-col">
+      <h1 className="text-2xl font-bold self-center mb-4">Humalahuutelu</h1>
       <ScrollArea
-        style={{
-          height: "300px",
-          border: "1px solid #ddd",
-          padding: "10px",
-          overflowY: "auto",
-        }}
+        className="w-full h-96 border border-[#ddd] rounded-md p-4 overflow-y-auto mb-4"
       >
         {messages.map((message: ChatMessage, index: number) => (
-          <div 
-            key={index} 
+          <div
+            key={index}
             className={`flex mb-2 ${message.sender === User.OWN ? 'justify-end' : 'justify-start'}`}
           >
-            <Card className={`p-2 w-1/2 ${message.sender === User.OWN ? 'bg-blue-100' : 'bg-gray-100'}`}>
-              <p className="text-black">{message.message}</p>
+            <Card className={`p-2 max-w-xs ${message.sender === User.OWN ? 'bg-blue-100' : 'bg-gray-100'}`}>
+              <p className="text-black break-words">{message.message}</p>
             </Card>
           </div>
         ))}
+        <div ref={scrollRef} />
       </ScrollArea>
-      <div style={{ display: "flex", marginTop: "10px" }}>
-        <Textarea
-          value={currentMessage}
-          onChange={(e) => setCurrentMessage(e.target.value)}
-          placeholder="Type your message here..."
-          style={{ flexGrow: 1, marginRight: "10px" }}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              handleSendMessage();
-            }
-          }}
-        />
-        <Button onClick={handleSendMessage} color="primary">
-          Send
-        </Button>
-      </div>
+      <Textarea
+        value={currentMessage}
+        onChange={(e) => setCurrentMessage(e.target.value)}
+        placeholder="Type your message here..."
+        className="w-full"
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            handleSendMessage();
+          }
+        }}
+      />
+      <Button onClick={handleSendMessage} className="w-full mt-4">
+        Send
+      </Button> 
+      <p>Tässä palvelussa viestit eivät tallennu, sinulla ei ole käyttäjää, etkä voi tietää kuka on viestin lähettänyt. Käyttö omalla vastuulla</p>
     </div>
   );
 };
